@@ -1,6 +1,9 @@
 use super::{CompressionBody, CompressionLayer, ResponseFuture};
 use crate::compression::predicate::{DefaultPredicate, Predicate};
-use crate::{compression_utils::AcceptEncoding, content_encoding::Encoding};
+use crate::{
+    compression_utils::{AcceptEncoding, EncodingLevels, Level},
+    content_encoding::Encoding,
+};
 use http::{Request, Response};
 use http_body::Body;
 use std::task::{Context, Poll};
@@ -17,6 +20,7 @@ pub struct Compression<S, P = DefaultPredicate> {
     pub(crate) inner: S,
     pub(crate) accept: AcceptEncoding,
     pub(crate) predicate: P,
+    pub(crate) levels: EncodingLevels,
 }
 
 impl<S> Compression<S, DefaultPredicate> {
@@ -26,6 +30,7 @@ impl<S> Compression<S, DefaultPredicate> {
             inner: service,
             accept: AcceptEncoding::default(),
             predicate: DefaultPredicate::default(),
+            levels: EncodingLevels::default(),
         }
     }
 }
@@ -38,6 +43,27 @@ impl<S, P> Compression<S, P> {
     /// [`Layer`]: tower_layer::Layer
     pub fn layer() -> CompressionLayer {
         CompressionLayer::new()
+    }
+
+    /// Sets compression level for the gzip encoding.
+    #[cfg(feature = "compression-gzip")]
+    pub fn with_gzip_quality(mut self, level: Level) -> Self {
+        self.levels.gzip = Some(level);
+        self
+    }
+
+    /// Sets compression level for the Deflate encoding.
+    #[cfg(feature = "compression-deflate")]
+    pub fn with_deflate_quality(mut self, level: Level) -> Self {
+        self.levels.deflate = Some(level);
+        self
+    }
+
+    /// Sets compression level for the Brotli encoding.
+    #[cfg(feature = "compression-br")]
+    pub fn with_br_quality(mut self, level: Level) -> Self {
+        self.levels.br = Some(level);
+        self
     }
 
     /// Sets whether to enable the gzip encoding.
@@ -128,6 +154,7 @@ impl<S, P> Compression<S, P> {
             inner: self.inner,
             accept: self.accept,
             predicate,
+            levels: self.levels,
         }
     }
 }
@@ -154,6 +181,7 @@ where
             inner: self.inner.call(req),
             encoding,
             predicate: self.predicate.clone(),
+            levels: self.levels,
         }
     }
 }

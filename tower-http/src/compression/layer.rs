@@ -1,6 +1,6 @@
 use super::{Compression, Predicate};
 use crate::compression::predicate::DefaultPredicate;
-use crate::compression_utils::AcceptEncoding;
+use crate::compression_utils::{AcceptEncoding, EncodingLevels, Level};
 use tower_layer::Layer;
 
 /// Compress response bodies of the underlying service.
@@ -13,6 +13,7 @@ use tower_layer::Layer;
 pub struct CompressionLayer<P = DefaultPredicate> {
     accept: AcceptEncoding,
     predicate: P,
+    levels: EncodingLevels,
 }
 
 impl<S, P> Layer<S> for CompressionLayer<P>
@@ -26,6 +27,7 @@ where
             inner,
             accept: self.accept,
             predicate: self.predicate.clone(),
+            levels: self.levels,
         }
     }
 }
@@ -34,6 +36,27 @@ impl CompressionLayer {
     /// Create a new [`CompressionLayer`]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Sets compression level for the gzip encoding.
+    #[cfg(feature = "compression-gzip")]
+    pub fn with_gzip_quality(mut self, level: Level) -> Self {
+        self.levels.gzip = Some(level);
+        self
+    }
+
+    /// Sets compression level for the Deflate encoding.
+    #[cfg(feature = "compression-deflate")]
+    pub fn with_deflate_quality(mut self, level: Level) -> Self {
+        self.levels.deflate = Some(level);
+        self
+    }
+
+    /// Sets compression level for the Brotli encoding.
+    #[cfg(feature = "compression-br")]
+    pub fn with_br_quality(mut self, level: Level) -> Self {
+        self.levels.br = Some(level);
+        self
     }
 
     /// Sets whether to enable the gzip encoding.
@@ -91,6 +114,7 @@ impl CompressionLayer {
         CompressionLayer {
             accept: self.accept,
             predicate,
+            levels: self.levels,
         }
     }
 }

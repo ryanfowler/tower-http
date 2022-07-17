@@ -15,6 +15,15 @@ use std::{
 use tokio::io::AsyncRead;
 use tokio_util::io::{poll_read_buf, StreamReader};
 
+pub type Level = async_compression::Level;
+
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct EncodingLevels {
+    pub(crate) gzip: Option<Level>,
+    pub(crate) deflate: Option<Level>,
+    pub(crate) br: Option<Level>,
+}
+
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct AcceptEncoding {
     pub(crate) gzip: bool,
@@ -112,7 +121,7 @@ pub(crate) trait DecorateAsyncRead {
     type Output: AsyncRead;
 
     /// Apply the decorator
-    fn apply(input: Self::Input) -> Self::Output;
+    fn apply(input: Self::Input, level: Option<Level>) -> Self::Output;
 
     /// Get a pinned mutable reference to the original input.
     ///
@@ -130,7 +139,7 @@ pin_project! {
 
 impl<M: DecorateAsyncRead> WrapBody<M> {
     #[allow(dead_code)]
-    pub(crate) fn new<B>(body: B) -> Self
+    pub(crate) fn new<B>(body: B, level: Option<Level>) -> Self
     where
         B: Body,
         M: DecorateAsyncRead<Input = AsyncReadBody<B>>,
@@ -146,7 +155,7 @@ impl<M: DecorateAsyncRead> WrapBody<M> {
         let read = StreamReader::new(stream);
 
         // apply decorator to `AsyncRead` yieling another `AsyncRead`
-        let read = M::apply(read);
+        let read = M::apply(read, level);
 
         Self { read }
     }

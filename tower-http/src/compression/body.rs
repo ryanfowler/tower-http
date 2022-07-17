@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 use crate::{
-    compression_utils::{AsyncReadBody, BodyIntoStream, DecorateAsyncRead, WrapBody},
+    compression_utils::{AsyncReadBody, BodyIntoStream, DecorateAsyncRead, Level, WrapBody},
     BoxError,
 };
 #[cfg(feature = "compression-br")]
@@ -244,8 +244,12 @@ where
     type Input = AsyncReadBody<B>;
     type Output = GzipEncoder<Self::Input>;
 
-    fn apply(input: Self::Input) -> Self::Output {
-        GzipEncoder::new(input)
+    fn apply(input: Self::Input, level: Option<Level>) -> Self::Output {
+        if let Some(level) = level {
+            GzipEncoder::with_quality(input, level)
+        } else {
+            GzipEncoder::new(input)
+        }
     }
 
     fn get_pin_mut(pinned: Pin<&mut Self::Output>) -> Pin<&mut Self::Input> {
@@ -261,8 +265,12 @@ where
     type Input = AsyncReadBody<B>;
     type Output = ZlibEncoder<Self::Input>;
 
-    fn apply(input: Self::Input) -> Self::Output {
-        ZlibEncoder::new(input)
+    fn apply(input: Self::Input, level: Option<Level>) -> Self::Output {
+        if let Some(level) = level {
+            ZlibEncoder::with_quality(input, level)
+        } else {
+            ZlibEncoder::new(input)
+        }
     }
 
     fn get_pin_mut(pinned: Pin<&mut Self::Output>) -> Pin<&mut Self::Input> {
@@ -278,8 +286,12 @@ where
     type Input = AsyncReadBody<B>;
     type Output = BrotliEncoder<Self::Input>;
 
-    fn apply(input: Self::Input) -> Self::Output {
-        BrotliEncoder::new(input)
+    fn apply(input: Self::Input, level: Option<Level>) -> Self::Output {
+        if let Some(level) = level {
+            BrotliEncoder::with_quality(input, level)
+        } else {
+            BrotliEncoder::new(input)
+        }
     }
 
     fn get_pin_mut(pinned: Pin<&mut Self::Output>) -> Pin<&mut Self::Input> {

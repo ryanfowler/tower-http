@@ -42,17 +42,17 @@ where
                 let body = match entry.get().as_bytes() {
                     #[cfg(feature = "decompression-gzip")]
                     b"gzip" if self.accept.gzip() => {
-                        DecompressionBody::new(BodyInner::gzip(WrapBody::new(body)))
+                        DecompressionBody::new(BodyInner::gzip(WrapBody::new(body, None)))
                     }
 
                     #[cfg(feature = "decompression-deflate")]
                     b"deflate" if self.accept.deflate() => {
-                        DecompressionBody::new(BodyInner::deflate(WrapBody::new(body)))
+                        DecompressionBody::new(BodyInner::deflate(WrapBody::new(body, None)))
                     }
 
                     #[cfg(feature = "decompression-br")]
                     b"br" if self.accept.br() => {
-                        DecompressionBody::new(BodyInner::brotli(WrapBody::new(body)))
+                        DecompressionBody::new(BodyInner::brotli(WrapBody::new(body, None)))
                     }
 
                     _ => {

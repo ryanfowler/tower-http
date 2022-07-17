@@ -2,7 +2,7 @@
 
 use super::{body::BodyInner, CompressionBody};
 use crate::compression::predicate::Predicate;
-use crate::compression_utils::WrapBody;
+use crate::compression_utils::{EncodingLevels, Level, WrapBody};
 use crate::content_encoding::Encoding;
 use futures_util::ready;
 use http::{header, HeaderMap, HeaderValue, Response};
@@ -23,7 +23,8 @@ pin_project! {
         #[pin]
         pub(crate) inner: F,
         pub(crate) encoding: Encoding,
-        pub(crate) predicate: P
+        pub(crate) predicate: P,
+        pub(crate) levels: EncodingLevels,
     }
 }
 
@@ -55,11 +56,17 @@ where
             }
 
             #[cfg(feature = "compression-gzip")]
-            (_, Encoding::Gzip) => CompressionBody::new(BodyInner::gzip(WrapBody::new(body))),
+            (_, Encoding::Gzip) => {
+                CompressionBody::new(BodyInner::gzip(WrapBody::new(body, self.levels.gzip)))
+            }
             #[cfg(feature = "compression-deflate")]
-            (_, Encoding::Deflate) => CompressionBody::new(BodyInner::deflate(WrapBody::new(body))),
+            (_, Encoding::Deflate) => {
+                CompressionBody::new(BodyInner::deflate(WrapBody::new(body, self.levels.deflate)))
+            }
             #[cfg(feature = "compression-br")]
-            (_, Encoding::Brotli) => CompressionBody::new(BodyInner::brotli(WrapBody::new(body))),
+            (_, Encoding::Brotli) => {
+                CompressionBody::new(BodyInner::brotli(WrapBody::new(body, self.levels.br)))
+            }
             #[cfg(feature = "fs")]
             (true, _) => {
                 // This should never happen because the `AcceptEncoding` struct which is used to determine

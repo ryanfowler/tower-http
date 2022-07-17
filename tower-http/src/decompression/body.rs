@@ -1,7 +1,7 @@
 #![allow(unused_imports)]
 
 use crate::{
-    compression_utils::{AsyncReadBody, BodyIntoStream, DecorateAsyncRead, WrapBody},
+    compression_utils::{AsyncReadBody, BodyIntoStream, DecorateAsyncRead, Level, WrapBody},
     BoxError,
 };
 #[cfg(feature = "decompression-br")]
@@ -291,7 +291,7 @@ where
     type Input = AsyncReadBody<B>;
     type Output = GzipDecoder<Self::Input>;
 
-    fn apply(input: Self::Input) -> Self::Output {
+    fn apply(input: Self::Input, _level: Option<Level>) -> Self::Output {
         GzipDecoder::new(input)
     }
 
@@ -308,7 +308,7 @@ where
     type Input = AsyncReadBody<B>;
     type Output = ZlibDecoder<Self::Input>;
 
-    fn apply(input: Self::Input) -> Self::Output {
+    fn apply(input: Self::Input, _level: Option<Level>) -> Self::Output {
         ZlibDecoder::new(input)
     }
 
@@ -325,7 +325,7 @@ where
     type Input = AsyncReadBody<B>;
     type Output = BrotliDecoder<Self::Input>;
 
-    fn apply(input: Self::Input) -> Self::Output {
+    fn apply(input: Self::Input, _level: Option<Level>) -> Self::Output {
         BrotliDecoder::new(input)
     }
 

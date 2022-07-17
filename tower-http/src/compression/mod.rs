@@ -81,6 +81,8 @@ pub use self::{
     service::Compression,
 };
 
+pub use async_compression::Level;
+
 #[cfg(test)]
 mod tests {
     use super::*;
